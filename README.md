@@ -16,6 +16,14 @@
 
 ## 安装
 
+在 **插件 → 添加插件** 中粘贴固定安装包地址：
+
+```text
+https://github.com/gulagala001/dsh-persona-plugin/releases/download/v0.1.0-dsh.0.2.1-rc.2/gulagala001-dsh-persona-plugin-0.1.0-dsh.0.2.1-rc.2.tgz
+```
+
+[SHA256SUMS](https://github.com/gulagala001/dsh-persona-plugin/releases/download/v0.1.0-dsh.0.2.1-rc.2/SHA256SUMS)
+
 当前构建精确适配 **DSH 0.2.1-rc.2**、**Cordis 4.0.5**、**Node.js 22.19+**。
 
 取得 `gulagala001-dsh-persona-plugin-0.1.0-dsh.0.2.1-rc.2.tgz` 后，通过 DSH **插件 → 添加插件**安装其本地绝对路径。也可执行：

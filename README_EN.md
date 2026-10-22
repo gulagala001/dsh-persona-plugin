@@ -16,6 +16,14 @@
 
 ## Installation
 
+In **Plugins → Add plugin**, paste the fixed package URL:
+
+```text
+https://github.com/gulagala001/dsh-persona-plugin/releases/download/v0.1.0-dsh.0.2.1-rc.2/gulagala001-dsh-persona-plugin-0.1.0-dsh.0.2.1-rc.2.tgz
+```
+
+[SHA256SUMS](https://github.com/gulagala001/dsh-persona-plugin/releases/download/v0.1.0-dsh.0.2.1-rc.2/SHA256SUMS)
+
 This build targets exactly **DSH 0.2.1-rc.2**, **Cordis 4.0.5** and **Node.js 22.19+**.
 
 Install `gulagala001-dsh-persona-plugin-0.1.0-dsh.0.2.1-rc.2.tgz` using its absolute local path in **Plugins → Add plugin**, or run:
