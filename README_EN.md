@@ -58,3 +58,5 @@ Packaging checks public files, Git history and the actual installation archive. 
 ## License
 
 [MIT](LICENSE). Host component attribution is included in [third-party notices](THIRD_PARTY_NOTICES.md).
+
+[Documentation structure and contributing](docs/documentation.md)

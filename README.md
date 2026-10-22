@@ -58,3 +58,5 @@ npm pack
 ## 许可
 
 [MIT](LICENSE)。宿主组件来源与许可见[第三方声明](THIRD_PARTY_NOTICES.md)。
+
+[文档结构与贡献](docs/documentation.md)
