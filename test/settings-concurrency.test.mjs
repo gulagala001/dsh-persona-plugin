@@ -52,11 +52,11 @@ test('real Cordis owners and HTTP writes preserve a newer library and allow an e
   assert.equal(restarted.revision(), b.revision);
   assert.match(f.service.promptFor({ id: 'session-a' }), /Window B/);
   // Session choices do not change the global library's revision.
-  f.service.store.save({ id: 'session-a', personalityPreset: 'softie' });
+  f.service.store.save({ id: 'session-a', personalityPreset: 'economical' });
   assert.equal((await f.read()).revision, b.revision);
   await f.owner.dispose(); assert.equal(f.routes(), 1);
   assert.equal((await f.write({ sessionPersonalityEnabled: true }, b.revision)).status, 200);
-  assert.equal(f.service.forSession({ id: 'session-a' }).effectivePreset, 'softie');
+  assert.equal(f.service.forSession({ id: 'session-a' }).effectivePreset, 'economical');
   await f.second.dispose(); assert.equal(f.routes(), 0);
 });
 
