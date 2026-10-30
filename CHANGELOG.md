@@ -1,3 +1,37 @@
+# DSH Persona 0.2.1 · DSH 0.2.1-rc.5
+
+[中文](#zh-021) | [English](#en-021)
+
+<a id="zh-021"></a>
+
+## 中文
+
+### 其他变更
+
+- 精确适配 DSH **0.2.1-rc.5**，同步匹配的 SDK、构建输入和完整依赖锁。每份安装包仅用于对应宿主。
+
+<a id="en-021"></a>
+
+## English
+
+### Other Changes
+
+- Target DSH **0.2.1-rc.5** exactly with matching SDK, build inputs and complete dependency locks. Each package is specific to its host.
+
+## 安装 / Installation
+
+精确宿主为 **DSH 0.2.1-rc.5**。在 **插件 → 添加插件** 中使用下方固定包。保留 profile、配置与会话，按宿主提示在任务结束后重新加载。
+
+The exact host is **DSH 0.2.1-rc.5**. Use the fixed package below in **Plugins → Add plugin**. Preserve profiles, configuration and conversations; reload after active tasks finish if requested.
+
+| DSH | 固定安装包 / Fixed package | SHA256SUMS |
+| --- | --- | --- |
+| 0.2.1-rc.5 | [DSH Persona 0.2.1](https://github.com/gulagala001/dsh-persona-plugin/releases/download/v0.2.1-dsh.0.2.1-rc.5/gulagala001-dsh-persona-plugin-0.2.1-dsh.0.2.1-rc.5.tgz) | [SHA256SUMS](https://github.com/gulagala001/dsh-persona-plugin/releases/download/v0.2.1-dsh.0.2.1-rc.5/SHA256SUMS) |
+
+[安装指南 / Installation guide](https://github.com/gulagala001/dsh-persona-plugin/blob/main/README.md)
+
+---
+
 # DSH Persona 0.2.0 · DSH 0.2.1-rc.3
 
 [中文](#zh-020) | [English](#en-020)
