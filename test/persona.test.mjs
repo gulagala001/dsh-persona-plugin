@@ -13,17 +13,17 @@ const personality = (name = '测试人设', text = 'PERSONA_TEST') => ({ format:
   modules: { identity: text, style: 'STYLE_TEST', communication: 'COMMUNICATION_TEST', presentation: '' } });
 const temporary = t => { const root = mkdtempSync(join(tmpdir(), 'dsh-persona-')); t.after(() => rmSync(root, { recursive: true, force: true })); return root; };
 
-test('new profiles enable independent choices; both new identities reach the prompt and explicit off survives restart', t => {
+test('new profiles enable independent choices; built-in identities reach the prompt and explicit off survives restart', t => {
   const root = temporary(t), store = new PersonaStore(root), hub = { store, config: () => store.config() };
   assert.equal(store.config().sessionPersonalityEnabled, true);
-  assert.deepEqual(personalityOptions().map(item => item.value), ['custom', 'default', 'overclock', 'economical', 'off']);
+  assert.deepEqual(personalityOptions().map(item => item.value), ['custom', 'default', 'overclock', 'economical', 'economical_en', 'off']);
   const assembly = { sections: [{ name: 'host', text: 'HOST_RULES' }], tools: [{ name: 'read' }] };
-  for (const [preset, name] of [['overclock', '超频'], ['economical', '精算']]) {
+  for (const [preset, name, identity] of [['overclock', '超频', '超频'], ['economical', '精算', '精算'], ['economical_en', '精算（英文版）', 'Actuary']]) {
     store.save({ id: preset, personalityPreset: preset });
     const value = sessionPersonality(hub, { id: preset });
     assert.equal(value.effectiveName, name);
     const applied = applyPersonality(assembly, { agent: { session: { id: preset } } }, { forSession: session => sessionPersonality(hub, session) });
-    assert.match(applied.sections.find(item => item.name === 'dsh-persona:identity').text, new RegExp(name));
+    assert.match(applied.sections.find(item => item.name === 'dsh-persona:identity').text, new RegExp(identity));
     assert.equal(applied.sections.length, 5);
     assert.equal(applied.sections[0], assembly.sections[0]);
     assert.equal(applied.tools, assembly.tools);
