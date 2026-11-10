@@ -36,7 +36,6 @@
     "check:public": "node scripts/check-public-files.mjs",
     "prepack": "node scripts/check-docs.mjs && npm run build && npm run check:public",
     "docs:check": "node scripts/check-docs.mjs",
-    "docs:write": "node scripts/check-docs.mjs --write",
     "release:check": "node scripts/check-release-assets.mjs"
   },
   "files": [
