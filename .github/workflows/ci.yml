@@ -10,7 +10,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: npm install --ignore-scripts
+      - run: node scripts/prepare-host-sdk.mjs
+      - run: npm ci --ignore-scripts
       - run: npm test
       - run: npm run build
       - run: npm run check:public
