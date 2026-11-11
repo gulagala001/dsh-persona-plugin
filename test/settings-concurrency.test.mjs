@@ -113,3 +113,17 @@ test('a request accepted before unload cannot overwrite the replacement runtime'
   assert.deepEqual(restarted.config().identitySavedPresets.map(item => item.name), ['Replacement window']);
   assert.equal(status, 503);
 });
+
+test('a replacement waits for disposal, and two waiting mounts share one new service',async t=>{
+  const home=mkdtempSync(join(tmpdir(),'persona-retire-'));t.after(()=>rmSync(home,{recursive:true,force:true}));
+  const entered=Promise.withResolvers(), done=Promise.withResolvers();
+  let apis=0,generations=0;const owners=[];
+  const root={get:key=>key==='profileContext'?{home,dir:home}:undefined,
+    provide:()=>()=>{},on:()=>()=>{},inject(){apis++;generations++;
+      return {async dispose(){entered.resolve();await done.promise;apis--;}};}};
+  const ctx=()=>({root,effect(setup){owners.push(setup());}});
+  acquirePersona(ctx());const closing=owners.shift()();await entered.promise;
+  const a=acquirePersona(ctx()),b=acquirePersona(ctx());assert.equal(apis,1);
+  done.resolve();await closing;assert.equal(await a,await b);assert.equal(apis,1);assert.equal(generations,2);
+  for(const release of owners)await release();assert.equal(apis,0);
+});
