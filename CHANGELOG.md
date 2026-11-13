@@ -1,3 +1,31 @@
+# DSH Persona 0.2.4 · DSH 0.2.2-rc.3
+
+[中文](#zh-024) · [English](#en-024)
+
+<a id="zh-024"></a>
+
+## 中文
+
+### 其他变更
+
+- 适配 DSH 0.2.2-rc.3。
+
+<a id="en-024"></a>
+
+## English
+
+### Other changes
+
+- Adds support for DSH 0.2.2-rc.3.
+
+## 安装 / Installation
+
+DSH **0.2.2-rc.3** · Node.js **24.9.0+**
+
+[固定安装包 / Install package](https://github.com/gulagala001/dsh-persona-plugin/releases/download/v0.2.4-dsh.0.2.2-rc.3/gulagala001-dsh-persona-plugin-0.2.4-dsh.0.2.2-rc.3.tgz) · [安装指南 / Installation guide](https://github.com/gulagala001/dsh-persona-plugin/blob/main/README.md) · [SHA256SUMS](https://github.com/gulagala001/dsh-persona-plugin/releases/download/v0.2.4-dsh.0.2.2-rc.3/SHA256SUMS)
+
+---
+
 # DSH Persona 0.2.3 · DSH 0.2.2-rc.2
 
 [中文](#zh-023) · [English](#en-023)
