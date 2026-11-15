@@ -8,6 +8,40 @@ import { acquirePersona } from '../src/index.mjs';
 import { applyPersonality, PERSONALITY_SCOPE } from '../src/shared/prompt.mjs';
 import { importPersonalityFile, exportPersonalityFile, personalityPatch, personalityOptions } from '../src/shared/personality.mjs';
 import { sessionPersonality } from '../src/session.mjs';
+import { Session } from '@deepseek-ai/dsh-session';
+import { PERSONA_SNAPSHOT, readPromptSnapshot } from '../src/shared/prompt-snapshot.mjs';
+
+test('native prompt records preserve the copied personality through cold and nested forks', async t => {
+  const home = temporary(t), hooks = new Map(), effects = [], sessions = new Map();
+  const services = new Map([['profileContext', { home, dir: home }], ['sessions', { get: id => sessions.get(id) }]]);
+  const root = { get: key => services.get(key), provide(key, value) { services.set(key, value); return () => services.delete(key); },
+    on(name, listener) { hooks.set(name, listener); return () => hooks.delete(name); }, inject() { return { dispose() {} }; } };
+  const owner = { root, effect(fn) { effects.push(fn()); } };
+  let service = acquirePersona(owner);
+  const parent = Session.create('native-parent'); sessions.set(parent.id, parent);
+  service.store.save({ id: parent.id, personalityPreset: 'economical' });
+  parent.append('turn/start', { turn: 1 });
+  const expected = service.forPrompt(parent).modules;
+  const count = parent.seq; service.forPrompt(parent); assert.equal(parent.seq, count, 'unchanged presentations do not grow the log');
+  parent.append('turn/end', { turn: 1, reason: { kind: 'completed' } });
+  const seed = JSON.parse(JSON.stringify(parent.snapshotEvents()));
+  service.store.save({ id: parent.id, personalityPreset: 'off' });
+  await effects.shift()(); service = acquirePersona(owner);
+  service.forPrompt(parent); // A newer, unfinished turn must not enter the copied prefix.
+  const child = Session.create('native-child', seed, { ...parent.header, id: 'native-child', origin: 'subagent', isSeeded: true, parentSession: parent.id }, seed.length);
+  hooks.get('agent/created')({ agent: { session: child }, source: 'startup' });
+  assert.deepEqual(service.forPrompt(child).modules, expected);
+  assert.equal(service.store.forkModules(child.id), undefined, 'new forks do not accumulate sidecar entries');
+  hooks.get('agent/disposed')({ agent: { session: child } });
+  sessions.set(child.id, child);
+  const grandchild = Session.create('grandchild', child.snapshotEvents(), { ...child.header, id: 'grandchild', parentSession: child.id }, child.seq);
+  hooks.get('agent/created')({ agent: { session: grandchild }, source: 'startup' });
+  assert.deepEqual(service.forPrompt(grandchild).modules, expected);
+  const empty = Session.create('empty-fork', [], { ...parent.header, id: 'empty-fork', origin: 'subagent', isSeeded: false, parentSession: parent.id }, 0);
+  hooks.get('agent/created')({ agent: { session: empty }, source: 'startup' }); service.forPrompt(empty);
+  assert.equal(readPromptSnapshot(empty, PERSONA_SNAPSHOT), undefined);
+  await effects.shift()();
+});
 
 const personality = (name = '测试人设', text = 'PERSONA_TEST') => ({ format: 'dsh.persona', version: 1, name,
   modules: { identity: text, style: 'STYLE_TEST', communication: 'COMMUNICATION_TEST', presentation: '' } });

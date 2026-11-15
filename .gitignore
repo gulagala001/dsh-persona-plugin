@@ -11,3 +11,4 @@ PLAN.md
 coverage/
 test-results/
 playwright-report/
+.codegraph/
