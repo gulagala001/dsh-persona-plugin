@@ -59,7 +59,11 @@ test('queued edits snapshot their values and cannot borrow a newer successful re
 test('a delayed read cannot replace a completed save and reads requested during saving wait', async t => {
   const readGate = deferred(), writeGate = deferred(), entered = deferred(); let reads = 0;
   globals(t, async (_url, options) => {
-    if (!options.method) { reads++; if (reads === 2) await readGate.promise; return response({ identityPrompt: 'Old' }); }
+    if (!options.method) {
+      const attempt = ++reads;
+      if (attempt === 2) await readGate.promise;
+      return response({ identityPrompt: attempt === 3 ? 'External' : 'Old' }, attempt === 3 ? 2 : 0);
+    }
     entered.resolve(); await writeGate.promise; return response({ identityPrompt: 'New' }, 1);
   });
   const client = createSettingsClient(); t.after(() => client.dispose()); await client.load();
@@ -68,8 +72,8 @@ test('a delayed read cannot replace a completed save and reads requested during 
   const duringWrite = client.load();
   assert.equal(reads, 2); writeGate.resolve(); assert.equal(await save, true);
   readGate.resolve(); await Promise.all([staleRead, duringWrite]);
-  assert.equal(client.getSnapshot().config.identityPrompt, 'New');
-  assert.equal(reads, 2);
+  assert.equal(client.getSnapshot().config.identityPrompt, 'External');
+  assert.equal(reads, 3);
 });
 
 test('unloading cancels the in-flight request and never dispatches queued writes', async t => {

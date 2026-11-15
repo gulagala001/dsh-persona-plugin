@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PersonaStore } from '../src/store.mjs';
 import { acquirePersona } from '../src/index.mjs';
-import { applyPersonality } from '../src/shared/prompt.mjs';
+import { applyPersonality, PERSONALITY_SCOPE } from '../src/shared/prompt.mjs';
 import { importPersonalityFile, exportPersonalityFile, personalityPatch, personalityOptions } from '../src/shared/personality.mjs';
 import { sessionPersonality } from '../src/session.mjs';
 
@@ -23,8 +23,10 @@ test('new profiles enable independent choices; built-in identities reach the pro
     const value = sessionPersonality(hub, { id: preset });
     assert.equal(value.effectiveName, name);
     const applied = applyPersonality(assembly, { agent: { session: { id: preset } } }, { forSession: session => sessionPersonality(hub, session) });
-    assert.match(applied.sections.find(item => item.name === 'dsh-persona:identity').text, new RegExp(identity));
-    assert.equal(applied.sections.length, 5);
+    const prompt = applied.sections.find(item => item.name === 'dsh-persona:personality').text;
+    assert.match(prompt, new RegExp(identity));
+    assert.equal(prompt.split(PERSONALITY_SCOPE).length, 2);
+    assert.equal(applied.sections.length, 2);
     assert.equal(applied.sections[0], assembly.sections[0]);
     assert.equal(applied.tools, assembly.tools);
   }
@@ -104,20 +106,44 @@ test('duplicate installs share one runtime and removing either owner preserves t
   const owner = () => ({ root, effect(fn) { effects.push(fn()); } });
   const a = acquirePersona(owner());
   const { acquirePersona: secondCopy } = await import('../src/index.mjs?second-copy');
-  const b = secondCopy(owner()); assert.equal(a, b); assert.equal(routes, 1); assert.equal(hooks, 1);
+  const b = secondCopy(owner()); assert.equal(a, b); assert.equal(routes, 1); assert.equal(hooks, 4);
   a.update({ ...importPersonalityFile({}, JSON.stringify(personality())), sessionPersonalityEnabled: true });
   a.store.save({ id: 'session-one', personalityPreset: 'economical' });
   await effects.shift()(); assert.equal(routes, 1); assert.equal(b.forSession({ id: 'session-one' }).effectivePreset, 'economical');
   const assembly = { sections: [{ name: 'host', text: 'KEEP_CORE' }], tools: [{ name: 'read', parameters: { type: 'object' } }] };
   const adapted = applyPersonality(assembly, { agent: { session: { id: 'session-two', header: {} } } }, b);
   assert.equal(adapted.sections[0], assembly.sections[0]); assert.equal(adapted.tools, assembly.tools);
-  assert.equal(adapted.sections.filter(section => section.name === 'dsh-persona:identity').length, 1);
+  assert.equal(adapted.sections.filter(section => section.name === 'dsh-persona:personality').length, 1);
   assert.equal(applyPersonality(assembly, { agent: { session: { header: { origin: 'subagent' } } } }, b), assembly);
   assert.equal(applyPersonality({ ...assembly, sections: [{ name: 'dsh-persona:applied' }] }, { agent: { session: { header: {} } } }, b).sections.length, 1);
   b.update(personalityPatch(b.config(), 'off'));
   assert.equal(applyPersonality(assembly, { agent: { session: { id: 'session-two', header: {} } } }, b), assembly);
   await effects.shift()(); assert.equal(routes, 0); assert.equal(hooks, 0); assert.equal(services.has('dshPersona'), false);
 });
+test('seeded persona uses the copied turn, not the active parent turn, and survives reload', async t => {
+  const home = temporary(t), effects = [], hooks = new Map();
+  const services = new Map([['profileContext', { home, dir: join(home, 'profile') }]]);
+  const root = { get: key => services.get(key), provide(key, value) { services.set(key, value); return () => services.delete(key); },
+    on(name, listener) { hooks.set(name, listener); return () => hooks.delete(name); }, inject() { return { dispose() {} }; } };
+  const owner = { root, effect(fn) { effects.push(fn()); } };
+  const service = acquirePersona(owner), parent = { id: 'parent', header: {} };
+  service.update(personalityPatch(service.config(), 'economical'));
+  hooks.get('session/event')(parent, { type: 'turn/start' });
+  const inherited = service.forPrompt(parent).modules;
+  hooks.get('session/event')(parent, { type: 'turn/end', seq: 11 });
+  service.update(personalityPatch(service.config(), 'off'));
+  hooks.get('session/event')(parent, { type: 'turn/start' });
+  assert.notDeepEqual(service.forPrompt(parent).modules, inherited);
+  const child = { id: 'child', header: { origin: 'subagent', isSeeded: true, parentSession: parent.id }, inheritedEventCount: 12 };
+  hooks.get('agent/created')({ agent: { session: child }, source: 'startup' });
+  assert.deepEqual(service.forPrompt(child).modules, inherited);
+  await effects.shift()();
+  const reopened = acquirePersona(owner);
+  hooks.get('agent/created')({ agent: { session: child }, source: 'resume' });
+  assert.deepEqual(reopened.forPrompt(child).modules, inherited);
+  await effects.shift()();
+});
+
 test('corrupt data fails without resetting the stored file', t => {
   const root = temporary(t); writeFileSync(join(root, 'state.json'), '{broken');
   assert.throws(() => new PersonaStore(root), /保留/);
