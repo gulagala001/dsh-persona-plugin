@@ -90,3 +90,17 @@ test('unloading cancels the in-flight request and never dispatches queued writes
   assert.equal(signal.aborted, true); assert.equal(writes, 1); assert.equal(saved.length, 0);
   assert.equal(await client.commit({ identityPrompt: 'After unload' }), false);
 });
+
+test('a lost save reply is reconciled without resending the patch', async t => {
+  let server = { sessionPersonalityEnabled: true }, writes = 0;
+  const events = globals(t, async (_url, options) => {
+    if (!options.method) return response(server, writes);
+    server = { ...server, ...JSON.parse(options.body) }; writes++;
+    throw new TypeError('reply lost');
+  });
+  const client = createSettingsClient(); t.after(() => client.dispose());
+  await client.load();
+  assert.equal(await client.commit({ sessionPersonalityEnabled: false }), true);
+  assert.deepEqual(client.getSnapshot(), { config: server, error: '' });
+  assert.equal(writes, 1); assert.deepEqual(events, [server]);
+});
