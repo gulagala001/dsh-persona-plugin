@@ -183,3 +183,13 @@ test('corrupt data fails without resetting the stored file', t => {
   assert.throws(() => new PersonaStore(root), /保留/);
   assert.equal(readFileSync(join(root, 'state.json'), 'utf8'), '{broken');
 });
+
+test('overlapping leases wait for retirement and only failed cleanup steps run again',async()=>{
+  const {retireEntry}=await import('../src/shared/retirement.mjs');
+  const root={},entry={},roots=new WeakMap([[root,entry]]),actions=[];
+  const gate=Promise.withResolvers();let failing=true;
+  const first=retireEntry(roots,root,entry,[()=>actions.push('stop'),async()=>{await gate.promise;actions.push('release');if(failing)throw Error('held');}]);
+  assert.equal(first,entry.retryRetirement());assert.equal(roots.get(root),entry);
+  gate.resolve();await assert.rejects(first,/held/);assert.equal(roots.get(root),entry);
+  failing=false;await entry.retryRetirement();assert.deepEqual(actions,['stop','release','release']);assert.equal(roots.has(root),false);
+});
